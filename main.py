@@ -1,8 +1,8 @@
 import sys
-from src.window import *
+import qdarktheme
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-import qdarktheme
+from src.window import Window
 
 def main() -> None:
     app = QApplication(sys.argv)
