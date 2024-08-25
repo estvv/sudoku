@@ -29,3 +29,6 @@ def setLogger():
     ch.setFormatter(LoggingFormatter())
     logger.addHandler(ch)
     return logger
+
+global logger
+logger = setLogger()

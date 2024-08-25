@@ -1,11 +1,18 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
+from src.logger import *
 from src.tools import *
 from src.enums.enums import *
 
-class SudokuBorder(QStyledItemDelegate):
-    def paint(self, painter, option, index):
+class TableDelegate(QStyledItemDelegate):
+    def __init__(self, button_pen, parent = None) -> None:
+        super().__init__(parent)
+        self.button_pen = button_pen
+        self.previous_text = ""
+        self.recursion_error = False
+
+    def paint(self, painter, option, index) -> None:
         super().paint(painter, option, index)
 
         if (index.column() + 1) % 3 == 0 and (index.column() + 1) != 9:
@@ -17,15 +24,52 @@ class SudokuBorder(QStyledItemDelegate):
             painter.setPen(pen)
             painter.drawLine(option.rect.bottomLeft(), option.rect.bottomRight())
 
-    def createEditor(self, parent, option, index):
+    def createEditor(self, parent, option, index) -> None:
         editor = QLineEdit(parent)
         editor.setAlignment(Qt.AlignCenter)
-        editor.setMaxLength(1)
-        editor.setValidator(QIntValidator(1, 9, editor))
+        if self.button_pen.isChecked():
+            editor.setMaxLength(9)
+            editor.setValidator(QRegExpValidator(QRegExp("^[1-9]{1,9}$"), editor))
+        else:
+            editor.setMaxLength(1)
+            editor.setValidator(QRegExpValidator(QRegExp("[1-9]"), editor))
+        editor.textChanged.connect(self.onTextChanged)
         return editor
 
+    def onTextChanged(self, text) -> None:
+        if self.recursion_error:
+            return
+        editor = self.sender()
+        if editor:
+            if self.button_pen.isChecked():
+                if self.previous_text:
+                    text += self.previous_text
+                    self.previous_text = ""
+                unsorted_text = ""
+                for char in text:
+                    if char not in unsorted_text:
+                        unsorted_text = unsorted_text + char
+                    else:
+                        unsorted_text = unsorted_text.replace(char, '')
+                sorted_text = ''.join(sorted(unsorted_text))
+                self.recursion_error = True
+                editor.setText(sorted_text)
+                self.recursion_error = False
+            else:
+                self.recursion_error = True
+                editor.setText(text)
+                self.recursion_error = False
+                event = QKeyEvent(QEvent.KeyPress, Qt.Key_Return, Qt.NoModifier)
+                QApplication.sendEvent(editor, event)
+
+    def setEditorData(self, editor, index) -> None:
+        text = index.data(Qt.DisplayRole)
+        if text is None:
+            text = ""
+        editor.setText(text)
+        self.previous_text = text
+
 class MenuPlay(QWidget):
-    widgetMenuPlay: QWidget = None
     font: QFont = None
 
     def __init__(self, switch_menu) -> None:
@@ -35,66 +79,68 @@ class MenuPlay(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.buttonBack = getButton(lambda: self.switch_menu(MenuID.home), "<")
-        topLayout = QHBoxLayout()
-        topLayout.addWidget(self.buttonBack)
-        topLayout.addStretch()
+        self.button_back = getButton(lambda: self.switch_menu(MenuID.home), "<")
+        layout_top = QHBoxLayout()
+        layout_top.addWidget(self.button_back)
+        layout_top.addStretch()
 
-        toolsLayout = self.initTools()
+        layout_tools = self.initTools()
         self.initSudokuTable()
-        numbersLayout = self.initNumbers()
+        layout_numbers = self.initNumbers()
 
-        layoutPlay = QVBoxLayout()
-        layoutPlay.addLayout(topLayout)
-        layoutPlay.addWidget(self.tableSudoku)
-        layoutPlay.setAlignment(self.tableSudoku, Qt.AlignHCenter)
-        layoutPlay.addLayout(toolsLayout)
-        layoutPlay.setAlignment(toolsLayout, Qt.AlignHCenter)
-        layoutPlay.addLayout(numbersLayout)
-        layoutPlay.setAlignment(numbersLayout, Qt.AlignHCenter)
-        self.setLayout(layoutPlay)
+        layout_play = QVBoxLayout()
+        layout_play.addLayout(layout_top)
+        layout_play.addWidget(self.table_sudoku)
+        layout_play.setAlignment(self.table_sudoku, Qt.AlignHCenter)
+        layout_play.addLayout(layout_tools)
+        layout_play.setAlignment(layout_tools, Qt.AlignHCenter)
+        layout_play.addLayout(layout_numbers)
+        layout_play.setAlignment(layout_numbers, Qt.AlignHCenter)
+        self.setLayout(layout_play)
 
     def initTools(self) -> QHBoxLayout:
-        toolsLayout = QHBoxLayout()
-        self.buttonErase = getButton(self.buttonEraseClicked, "", [100, 50])
-        self.buttonErase.setIcon(QIcon(getAbsolutePath("assets", "eraser.png")))
-        self.buttonErase.setIconSize(QSize(32, 32))
-        self.buttonErase.setToolTip("Click to erase a box.")
+        layout_tools = QHBoxLayout()
+        self.button_erase = getButton(self.buttonEraseClicked, "", [100, 50])
+        self.button_erase.setIcon(QIcon(getAbsolutePath("assets", "eraser.png")))
+        self.button_erase.setIconSize(QSize(32, 32))
+        self.button_erase.setToolTip("Click to erase a box.")
 
-        self.buttonPen = getButton(self.buttonPenClicked, "", [100, 50])
-        self.buttonPen.setIcon(QIcon(getAbsolutePath("assets", "pen.png")))
-        self.buttonPen.setIconSize(QSize(32, 32))
-        self.buttonPen.setCheckable(True)
-        self.buttonPen.setToolTip("Click to enable comment.")
+        self.button_pen = getButton(self.buttonPenClicked, "", [100, 50])
+        self.button_pen.setIcon(QIcon(getAbsolutePath("assets", "pen.png")))
+        self.button_pen.setIconSize(QSize(32, 32))
+        self.button_pen.setCheckable(True)
+        self.button_pen.setToolTip("Click to enable comment.")
 
-        self.buttonHint = getButton(self.buttonNumberClicked, "  0 / 3", [100, 50])
-        self.buttonHint.setIcon(QIcon(getAbsolutePath("assets", "hint.png")))
-        self.buttonHint.setIconSize(QSize(32, 32))
+        self.tableDelegate = TableDelegate(self.button_pen)
 
-        toolsLayout.addWidget(self.buttonErase)
-        toolsLayout.addSpacing(40)
-        toolsLayout.addWidget(self.buttonPen)
-        toolsLayout.addSpacing(40)
-        toolsLayout.addWidget(self.buttonHint)
-        return toolsLayout
+        self.button_hint = getButton(self.buttonNumberClicked, "  0 / 3", [100, 50])
+        self.button_hint.setIcon(QIcon(getAbsolutePath("assets", "hint.png")))
+        self.button_hint.setIconSize(QSize(32, 32))
+
+        layout_tools.addWidget(self.button_erase)
+        layout_tools.addSpacing(40)
+        layout_tools.addWidget(self.button_pen)
+        layout_tools.addSpacing(40)
+        layout_tools.addWidget(self.button_hint)
+        return layout_tools
 
     def initSudokuTable(self) -> None:
-        self.tableSudoku = QTableWidget(9, 9)
-        self.tableSudoku.setFixedSize(900, 600)
-        self.tableSudoku.setFont(self.font)
-        self.tableSudoku.setItemDelegate(SudokuBorder())
-        self.tableSudoku.horizontalHeader().setVisible(False)
-        self.tableSudoku.verticalHeader().setVisible(False)
-        self.tableSudoku.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.tableSudoku.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.tableSudoku.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.table_sudoku = QTableWidget(9, 9)
+        self.table_sudoku.setFixedSize(900, 600)
+        self.table_sudoku.setFont(self.font)
+        self.table_sudoku.setItemDelegate(self.tableDelegate)
+        self.table_sudoku.horizontalHeader().setVisible(False)
+        self.table_sudoku.verticalHeader().setVisible(False)
+        self.table_sudoku.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table_sudoku.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table_sudoku.setSelectionMode(QAbstractItemView.SingleSelection)
 
         for i in range(9):
             for j in range(9):
                 item = QTableWidgetItem()
                 item.setTextAlignment(Qt.AlignCenter)
                 item.setFont(self.font)
-                self.tableSudoku.setItem(i, j, item)
+                self.table_sudoku.setItem(i, j, item)
         self.blackTheme()
 
     def blackTheme(self):
@@ -103,12 +149,12 @@ class MenuPlay(QWidget):
 
         for i in range(9):
             for j in range(9):
-                item = self.tableSudoku.item(i, j)
+                item = self.table_sudoku.item(i, j)
                 item.setBackground(default_bg_color)
                 item.setForeground(QColor("white"))
 
         # Pour l'état activé (focus) des cellules
-        self.tableSudoku.setStyleSheet(f"""
+        self.table_sudoku.setStyleSheet(f"""
             QTableWidget::item:selected {{
                 background-color: {active_bg_color.name()};
                 border: 1px solid {active_bg_color.darker().name()};
@@ -121,11 +167,11 @@ class MenuPlay(QWidget):
 
         for i in range(9):
             for j in range(9):
-                item = self.tableSudoku.item(i, j)
+                item = self.table_sudoku.item(i, j)
                 item.setBackground(default_bg_color)
                 item.setForeground(QColor("black"))
 
-        self.tableSudoku.setStyleSheet(f"""
+        self.table_sudoku.setStyleSheet(f"""
             QTableWidget::item:selected {{
                 background-color: {active_bg_color.name()};
                 border: 1px solid {active_bg_color.darker().name()};
@@ -133,32 +179,36 @@ class MenuPlay(QWidget):
         """)
 
     def initNumbers(self) -> QHBoxLayout:
-        numbersLayout = QHBoxLayout()
+        layout_numbers = QHBoxLayout()
         self.buttonsNumber: list[QPushButton] = []
         for i in range(1, 10):
             self.buttonsNumber.append(getSelfButton(self.buttonNumberClicked, str(i), [95, 50]))
         for i in range(len(self.buttonsNumber)):
-            numbersLayout.addWidget(self.buttonsNumber[i])
-        return numbersLayout
+            layout_numbers.addWidget(self.buttonsNumber[i])
+        return layout_numbers
 
     def onItemChanged(self, item: QTableWidgetItem) -> None:
         if len(item.text()) > 1:
             item.setText(item.text()[:1])
 
     def buttonEraseClicked(self) -> None:
-        for item in self.tableSudoku.selectedItems():
+        for item in self.table_sudoku.selectedItems():
             if item.isSelected():
                 item.setText("")
 
     def buttonPenClicked(self) -> None:
-        if self.buttonPen.isChecked():
-            self.buttonPen.setToolTip("Click to enable writing.")
+        if self.button_pen.isChecked():
+            logger.debug("Comment mode !!")
+            self.button_pen.setToolTip("Click to enable writing.")
         else:
-            self.buttonPen.setToolTip("Click to enable comment.")
+            logger.debug("Writing mode !!")
+            self.button_pen.setToolTip("Click to enable comment.")
+        self.tableDelegate = TableDelegate(self.button_pen)
+        self.table_sudoku.setItemDelegate(self.tableDelegate)
 
     def buttonHintClicked(self) -> None:
         state: QTableWidget = None
-        for item in self.tableSudoku.selectedItems():
+        for item in self.table_sudoku.selectedItems():
             if item.isSelected():
                 state = item
                 break
@@ -166,9 +216,13 @@ class MenuPlay(QWidget):
             return
 
     def buttonNumberClicked(self, button: QPushButton) -> None:
-        for item in self.tableSudoku.selectedItems():
-            if item.isSelected() and self.buttonPen.isChecked():
-                item.setForeground(QColor("red"))
-                item.setText(button.text())
+        for item in self.table_sudoku.selectedItems():
+            if item.isSelected() and self.button_pen.isChecked():
+                item.setForeground(QBrush(QColor('red')))
+                if button.text() in item.text():
+                    item.setText(item.text().replace(button.text(), ""))
+                else:
+                    item.setText(''.join(sorted(item.text() + button.text())))
             else:
+                #item.setForeground(QBrush(QColor('blue')))
                 item.setText(button.text())

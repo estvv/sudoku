@@ -1,15 +1,6 @@
 # Sudoku
 
-## Table of Contents
-
-- [Installation](#installation)
-- [Requirements](#requirements)
-- [Usage](#usage)
-- [Executables](#executables)
-- [Features](#features)
-- [Soon](#soon)
-
-## Installation
+## ⚙️ Installation
 
 - **Clone the Repository:**
 
@@ -18,7 +9,8 @@ git clone https://github.com/yourusername/sudoku.git
 cd sudoku
 ```
 
-## Requirements
+
+## ⚠️ Requirements
 
 - ### Linux
 
@@ -57,13 +49,13 @@ Whatever OS you use, you will need to install these packages
 pip install -r requirements.txt
 ```
 
-## USAGE
+## 🐍 USAGE
 
 ```bash
 python main.py
 ```
 
-## Executables
+## 👾 Executables
 
 - ### Linux
 
@@ -81,4 +73,15 @@ cd release/windows
 ./sudoku
 ```
 
-## Features
+## 💻 Features
+
+- Play sudoku
+- Choose the difficulty of the grid (🟢 Easy / 🟡 Medium / 🔴 Hard / ⚫ Impossible)
+- Have a 💡 hint on a box if the player is stuck
+- Choose your theme (🌑 Dark, 🌕 Light)
+
+## ⚖️ License
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+This project is licensed under the [MIT] License - see the LICENSE.md file for details
