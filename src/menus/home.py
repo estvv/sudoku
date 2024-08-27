@@ -93,8 +93,3 @@ class MenuHome(QWidget):
         self.button_hard.setChecked(False)
         self.button_impossible.setChecked(False)
         button.setChecked(True)
-
-def getBlurEffect() -> QGraphicsBlurEffect:
-    blur_effect = QGraphicsBlurEffect()
-    blur_effect.setBlurRadius(5)
-    return blur_effect

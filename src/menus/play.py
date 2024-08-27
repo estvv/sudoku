@@ -1,9 +1,11 @@
+import qdarkstyle
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from src.logger import *
 from src.tools import *
 from src.enums.enums import *
+from src.buttons.slicing_button import *
 
 class TableDelegate(QStyledItemDelegate):
     def __init__(self, button_pen, parent = None) -> None:
@@ -45,13 +47,7 @@ class TableDelegate(QStyledItemDelegate):
                 if self.previous_text:
                     text += self.previous_text
                     self.previous_text = ""
-                unsorted_text = ""
-                for char in text:
-                    if char not in unsorted_text:
-                        unsorted_text = unsorted_text + char
-                    else:
-                        unsorted_text = unsorted_text.replace(char, '')
-                sorted_text = ''.join(sorted(unsorted_text))
+                sorted_text = getCleanedString(text)
                 self.recursion_error = True
                 editor.setText(sorted_text)
                 self.recursion_error = False
@@ -79,9 +75,11 @@ class MenuPlay(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.button_back = getButton(lambda: self.switch_menu(MenuID.home), "<")
+        self.button_theme = SlicingButton("", QColor(255, 255, 255), QColor(0, 0, 0), self)
+        self.button_theme.animation.finished.connect(self.buttonThemeAnimationFinished)
         layout_top = QHBoxLayout()
-        layout_top.addWidget(self.button_back)
+        layout_top.addStretch()
+        layout_top.addWidget(self.button_theme)
         layout_top.addStretch()
 
         layout_tools = self.initTools()
@@ -141,42 +139,7 @@ class MenuPlay(QWidget):
                 item.setTextAlignment(Qt.AlignCenter)
                 item.setFont(self.font)
                 self.table_sudoku.setItem(i, j, item)
-        self.blackTheme()
-
-    def blackTheme(self):
-        default_bg_color = QColor("black")
-        active_bg_color = QColor("#1e1e1e")
-
-        for i in range(9):
-            for j in range(9):
-                item = self.table_sudoku.item(i, j)
-                item.setBackground(default_bg_color)
-                item.setForeground(QColor("white"))
-
-        # Pour l'état activé (focus) des cellules
-        self.table_sudoku.setStyleSheet(f"""
-            QTableWidget::item:selected {{
-                background-color: {active_bg_color.name()};
-                border: 1px solid {active_bg_color.darker().name()};
-            }}
-        """)
-
-    def whiteTheme(self):
-        default_bg_color = QColor("white")  # Couleur de fond par défaut
-        active_bg_color =  QColor("#f0f0f0")  # Couleur pour les cellules activées
-
-        for i in range(9):
-            for j in range(9):
-                item = self.table_sudoku.item(i, j)
-                item.setBackground(default_bg_color)
-                item.setForeground(QColor("black"))
-
-        self.table_sudoku.setStyleSheet(f"""
-            QTableWidget::item:selected {{
-                background-color: {active_bg_color.name()};
-                border: 1px solid {active_bg_color.darker().name()};
-            }}
-        """)
+        updateTheme(self.table_sudoku, QColor("white"), QColor("black"), QColor("#1e1e1e"))
 
     def initNumbers(self) -> QHBoxLayout:
         layout_numbers = QHBoxLayout()
@@ -187,9 +150,19 @@ class MenuPlay(QWidget):
             layout_numbers.addWidget(self.buttonsNumber[i])
         return layout_numbers
 
-    def onItemChanged(self, item: QTableWidgetItem) -> None:
-        if len(item.text()) > 1:
-            item.setText(item.text()[:1])
+    def buttonThemeAnimationFinished(self):
+        app = QApplication.instance()
+
+        if self.button_theme.slider_pos > 0:
+            app.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.LightPalette))
+            logger.info("Light")
+            self.button_theme.setText("")
+            updateTheme(self.table_sudoku, QColor("black"), QColor("white"), QColor("#f0f0f0"))
+        else:
+            app.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.DarkPalette))
+            logger.info("Dark")
+            self.button_theme.setText("")
+            updateTheme(self.table_sudoku, QColor("white"), QColor("black"), QColor("#1e1e1e"))
 
     def buttonEraseClicked(self) -> None:
         for item in self.table_sudoku.selectedItems():
@@ -198,10 +171,10 @@ class MenuPlay(QWidget):
 
     def buttonPenClicked(self) -> None:
         if self.button_pen.isChecked():
-            logger.debug("Comment mode !!")
+            logger.debug("Toggling the comment mode.")
             self.button_pen.setToolTip("Click to enable writing.")
         else:
-            logger.debug("Writing mode !!")
+            logger.debug("Toggling the writing mode.")
             self.button_pen.setToolTip("Click to enable comment.")
         self.tableDelegate = TableDelegate(self.button_pen)
         self.table_sudoku.setItemDelegate(self.tableDelegate)
