@@ -28,7 +28,7 @@ class Window(QMainWindow):
 
     def initMenus(self) -> None:
         self.menu_home = MenuHome(self.change_window)
-        self.menu_play = MenuPlay(self.change_window)
+        self.menu_play = MenuPlay()
         self.current_menu = None
         self.change_window(MenuID.home)
 
@@ -71,3 +71,5 @@ class Window(QMainWindow):
             for item in self.menu_play.table_sudoku.selectedItems():
                 if item.isSelected():
                     item.setText("")
+        if event.key() == Qt.Key_Escape:
+            self.change_window(MenuID.home)

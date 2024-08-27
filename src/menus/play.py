@@ -67,10 +67,10 @@ class TableDelegate(QStyledItemDelegate):
 
 class MenuPlay(QWidget):
     font: QFont = None
+    theme: ThemeID = ThemeID.dark
 
-    def __init__(self, switch_menu) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.switch_menu = switch_menu
         self.font = QFont("Arial", 12)
         self.initUI()
 
@@ -111,7 +111,7 @@ class MenuPlay(QWidget):
 
         self.tableDelegate = TableDelegate(self.button_pen)
 
-        self.button_hint = getButton(self.buttonNumberClicked, "  0 / 3", [100, 50])
+        self.button_hint = getButton(lambda: None, "  0 / 3", [100, 50])
         self.button_hint.setIcon(QIcon(getAbsolutePath("assets", "hint.png")))
         self.button_hint.setIconSize(QSize(32, 32))
 
@@ -139,7 +139,18 @@ class MenuPlay(QWidget):
                 item.setTextAlignment(Qt.AlignCenter)
                 item.setFont(self.font)
                 self.table_sudoku.setItem(i, j, item)
-        updateTheme(self.table_sudoku, QColor("white"), QColor("black"), QColor("#1e1e1e"))
+        self.updateTheme(QColor("white"), QColor("black"), QColor("#1e1e1e"))
+        self.table_sudoku.itemClicked.connect(self.some_function)
+
+    def some_function(self):
+        for item in self.table_sudoku.selectedItems():
+            if self.button_pen.isChecked():
+                item.setForeground(QColor(128, 128, 128))
+            else:
+                if self.theme == ThemeID.dark:
+                    item.setForeground(QColor("white"))
+                else:
+                    item.setForeground(QColor("black"))
 
     def initNumbers(self) -> QHBoxLayout:
         layout_numbers = QHBoxLayout()
@@ -157,19 +168,37 @@ class MenuPlay(QWidget):
             app.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.LightPalette))
             logger.info("Light")
             self.button_theme.setText("")
-            updateTheme(self.table_sudoku, QColor("black"), QColor("white"), QColor("#f0f0f0"))
+            self.updateTheme( QColor("black"), QColor("white"), QColor("#f0f0f0"))
+            self.theme = ThemeID.light
         else:
             app.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.DarkPalette))
             logger.info("Dark")
             self.button_theme.setText("")
-            updateTheme(self.table_sudoku, QColor("white"), QColor("black"), QColor("#1e1e1e"))
+            self.updateTheme( QColor("white"), QColor("black"), QColor("#1e1e1e"))
+            self.theme = ThemeID.dark
+
+    def updateTheme(self, foreground_color: QColor, background_color: QColor, selected_background_color: QColor):
+        for i in range(9):
+            for j in range(9):
+                item = self.table_sudoku.item(i, j)
+                item.setBackground(background_color)
+                if item.foreground().color() == QColor("white") or item.foreground().color() == QColor("black"):
+                    item.setForeground(foreground_color)
+
+        self.table_sudoku.setStyleSheet(f"""
+            QTableWidget::item:selected {{
+                background-color: {selected_background_color.name()};
+                border: 1px solid {selected_background_color.darker().name()};
+            }}
+        """)
 
     def buttonEraseClicked(self) -> None:
         for item in self.table_sudoku.selectedItems():
-            if item.isSelected():
-                item.setText("")
+            item.setText("")
 
     def buttonPenClicked(self) -> None:
+        for item in self.table_sudoku.selectedItems():
+            item.setSelected(False)
         if self.button_pen.isChecked():
             logger.debug("Toggling the comment mode.")
             self.button_pen.setToolTip("Click to enable writing.")
@@ -182,20 +211,16 @@ class MenuPlay(QWidget):
     def buttonHintClicked(self) -> None:
         state: QTableWidget = None
         for item in self.table_sudoku.selectedItems():
-            if item.isSelected():
-                state = item
-                break
+            state = item
         if not state:
             return
 
     def buttonNumberClicked(self, button: QPushButton) -> None:
         for item in self.table_sudoku.selectedItems():
-            if item.isSelected() and self.button_pen.isChecked():
-                item.setForeground(QBrush(QColor('red')))
+            if self.button_pen.isChecked():
                 if button.text() in item.text():
                     item.setText(item.text().replace(button.text(), ""))
                 else:
-                    item.setText(''.join(sorted(item.text() + button.text())))
+                    item.setText("".join(sorted(item.text() + button.text())))
             else:
-                #item.setForeground(QBrush(QColor('blue')))
                 item.setText(button.text())
