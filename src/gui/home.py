@@ -27,33 +27,25 @@ class MenuHome(QWidget):
 
         self.button_easy = getButton(lambda: updateDifficulty(self.button_easy), "Easy", 150, 40)
         self.button_easy.setToolTip("Easy difficulty.")
-        self.button_easy.setStyleSheet("""
-            QPushButton { color: green; }
-            QPushButton:checked { color: black; background-color: #3E8E41; }""")
+        self.button_easy.setStyleSheet("QPushButton { color: green; } QPushButton:checked { color: black; background-color: #3E8E41; }")
         self.button_easy.setCheckable(True)
         self.button_easy.setChecked(True)
 
         self.button_medium = getButton(lambda: updateDifficulty(self.button_medium), "Medium", 150, 40)
         self.button_medium.setToolTip("Medium difficulty.")
-        self.button_medium.setStyleSheet("""
-            QPushButton { color: yellow; }
-            QPushButton:checked { color: black; background-color: #FFEB3B;  }""")
+        self.button_medium.setStyleSheet("QPushButton { color: yellow; } QPushButton:checked { color: black; background-color: #FFEB3B;  }")
         self.button_medium.setCheckable(True)
         self.button_medium.setChecked(False)
 
         self.button_hard = getButton(lambda: updateDifficulty(self.button_hard), "Hard", 150, 40)
         self.button_hard.setToolTip("Hard difficulty.")
-        self.button_hard.setStyleSheet("""
-            QPushButton { color: orange; }
-            QPushButton:checked { color: black; background-color: #FF9800;  }""")
+        self.button_hard.setStyleSheet("QPushButton { color: orange; } QPushButton:checked { color: black; background-color: #FF9800;  }")
         self.button_hard.setCheckable(True)
         self.button_hard.setChecked(False)
 
         self.button_impossible = getButton(lambda: updateDifficulty(self.button_impossible), "Impossible", 150, 40)
         self.button_impossible.setToolTip("Impossible difficulty.")
-        self.button_impossible.setStyleSheet("""
-            QPushButton { color: red; }
-            QPushButton:checked { color: black; background-color: #C62828;  }""")
+        self.button_impossible.setStyleSheet("QPushButton { color: red; } QPushButton:checked { color: black; background-color: #C62828;  }")
         self.button_impossible.setCheckable(True)
         self.button_impossible.setChecked(False)
 

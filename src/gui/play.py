@@ -262,14 +262,8 @@ class MenuPlay(QWidget):
                 if item.foreground().color() == self.colors["item-background"]:
                     item.setForeground(self.colors["item-foreground"])
 
-        self.table_sudoku.setStyleSheet(f"""
-            QTableWidget::item:selected {{
-                background-color: {self.colors["item-background_selected"].name()};
-            }}
-            QTableWidget {{
-                border: none;
-            }}
-        """)
+        self.table_sudoku.setStyleSheet("QTableWidget::item:selected background-color:" + str(self.colors["item-background_selected"].name()))
+        self.table_sudoku.setStyleSheet("border: none;")
 
     def buttonEraseClicked(self) -> None:
         for item in self.table_sudoku.selectedItems():
