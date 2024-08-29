@@ -1,8 +1,12 @@
 import os
-from typing import Callable, Tuple
+import sys
+from random import *
+from sudoku import Sudoku
+from typing import Callable
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
+from src.enums.enums import *
 
 def getAbsolutePath(folder: str, filename: str) -> None:
     """
@@ -17,46 +21,40 @@ def getAbsolutePath(folder: str, filename: str) -> None:
     """
     return os.path.abspath(os.path.join(folder, filename))
 
-def getButton(func: Callable[[], any], title: str = None, min_size: Tuple[int, int] = None, max_size: Tuple[int, int] = None) -> QPushButton:
+def getButton(func: Callable[[], any], title: str, w: int, h: int) -> QPushButton:
     """
     Create a QPushButton object.
 
     Args:
         func[None] (any): Function that will be call when the button is pressed.
         title (str): Text display on the button.
-        min_size (Tuple[int, int]): Min (x, y) / (width, height) for the button.
-        max_size (Tuple[int, int]): Max (x, y) / (width, height) for the button.
+        w (int): width of the button.
+        h (int): height of the button.
 
     Returns:
         QPushButton: Button object.
     """
     button = QPushButton(title)
-    if min_size:
-        button.setMinimumSize(min_size[0], min_size[1])
-    if max_size:
-        button.setMaximumSize(max_size[0], max_size[1])
+    button.setFixedSize(w, h)
     if func:
         button.clicked.connect(func)
     return button
 
-def getSelfButton(func: Callable[[QPushButton], None], title: str = None, min_size: Tuple[int, int] = None, max_size: Tuple[int, int] = None) -> QPushButton:
+def getSelfButton(func: Callable[[QPushButton], None], title: str, w: int, h: int) -> QPushButton:
     """
     Create a QPushButton object.
 
     Args:
         func[button] (any): Function that will be call when the button is pressed with itself in parameters.
         title (str): Text display on the button.
-        min_size (Tuple[int, int]): Min (x, y) / (width, height) for the button.
-        max_size (Tuple[int, int]): Max (x, y) / (width, height) for the button.
+        w (int): width of the button.
+        h (int): height of the button.
 
     Returns:
         QPushButton: Button object.
     """
     button = QPushButton(title)
-    if min_size:
-        button.setMinimumSize(min_size[0], min_size[1])
-    if max_size:
-        button.setMaximumSize(max_size[0], max_size[1])
+    button.setFixedSize(w, h)
     if func:
         button.clicked.connect(lambda: func(button))
     return button
@@ -84,7 +82,15 @@ def getCleanedString(text: str) -> (str | None):
             unsorted_text = unsorted_text.replace(c, '')
     return ''.join(sorted(unsorted_text))
 
-def getBlurEffect() -> QGraphicsBlurEffect:
-    blur_effect = QGraphicsBlurEffect()
-    blur_effect.setBlurRadius(5)
-    return blur_effect
+def create_grid(difficulty: DifficultyID) -> tuple[list[list[int | None]], list[list[int | None]]]:
+    """
+    Create a sudoku grid.
+
+    Args:
+        difficulty (float): an enum between 0 and 1 to choose the difficulty (0 easy, 1 hardcore)
+
+    Returns:
+        tuple[list[list[int | None]], list[list[int | None]]]: the grid and the solved grid
+    """
+    grid = Sudoku(3, seed=randint(0, sys.maxsize)).difficulty(difficulty.value)
+    return grid.board, grid.solve().board

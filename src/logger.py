@@ -1,4 +1,5 @@
 import logging
+from logging import Logger
 
 class LoggingFormatter(logging.Formatter):
     green  = "\x1b[32;20m"
@@ -15,13 +16,13 @@ class LoggingFormatter(logging.Formatter):
         logging.ERROR:   red    + format + reset,
     }
 
-    def format(self, record):
+    def format(self, record) -> str:
         log_fmt = self.FORMATS.get(record.levelno)
         formatter = logging.Formatter(log_fmt)
         formatter.datefmt = "%H:%M:%S"
         return formatter.format(record)
 
-def setLogger():
+def setLogger() -> Logger:
     logger = logging.getLogger("Sudoku Logger")
     logger.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()

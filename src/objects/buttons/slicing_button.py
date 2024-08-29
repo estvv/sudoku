@@ -9,9 +9,9 @@ class SlicingButton(QPushButton):
     color_on: QColor = None
     color_off: QColor = None
 
-    def __init__(self, text: str, color_on: QColor, color_off: QColor, parent = None):
+    def __init__(self, text: str, w: int, h: int, color_on: QColor, color_off: QColor, parent = None) -> None:
         super().__init__(text, parent)
-        self.setFixedSize(200, 30)
+        self.setFixedSize(w, h)
         self.color_on = color_on
         self.color_off = color_off
         self.slider_pos = 0
@@ -20,15 +20,15 @@ class SlicingButton(QPushButton):
         self.animation.setDuration(500)
 
     @pyqtProperty(int)
-    def slice_position(self):
+    def slice_position(self) -> int:
         return self.slider_pos
 
     @slice_position.setter
-    def slice_position(self, value):
+    def slice_position(self, value: int) -> None:
         self.slider_pos = value
         self.update()
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event) -> None:
         if event.button() == Qt.LeftButton:
             self.animation.setStartValue(self.slider_pos)
             if self.slider_pos == 0:
@@ -38,7 +38,7 @@ class SlicingButton(QPushButton):
             self.animation.start()
         super().mousePressEvent(event)
 
-    def paintEvent(self, event):
+    def paintEvent(self, event) -> None:
         super().paintEvent(event)
         painter = QPainter(self)
         rect = self.rect()
