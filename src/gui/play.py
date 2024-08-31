@@ -7,31 +7,9 @@ from src.tools import *
 from src.enums.enums import *
 from src.objects.buttons.slicing_button import *
 
-darkColors: dict[str, QColor] = {
-    "item-foreground": QColor("white"),
-    "item-background": QColor("black"),
-    "item-background_selected": QColor(30, 30, 30),
-    "item-premade": QColor(65,105,225),
-    "item-made": QColor("yellow"),
-    "item-false": QColor("red"),
-    "item-comment": QColor(128, 128, 128),
-    "item-big_border": QColor(220, 220, 220),
-    "item-little_border": QColor(55, 65, 79)
-}
-
-whiteColors: dict[str, QColor] = {
-    "item-foreground": QColor("black"),
-    "item-background": QColor("white"),
-    "item-background_selected": QColor(240, 240, 240),
-    "item-premade": QColor(65, 105, 225),
-    "item-made": QColor("yellow"),
-    "item-false": QColor("red"),
-    "item-comment": QColor(128, 128, 128),
-    "item-big_border": QColor(150, 150, 150),
-    "item-little_border": QColor(192, 196, 200)
-}
-
 class DelegateSudokuTable(QStyledItemDelegate):
+    textChanged = pyqtSignal()
+
     def __init__(self, button_pen: QPushButton, colors: dict[str, QColor], parent = None) -> None:
         super().__init__(parent)
         self.button_pen = button_pen
@@ -63,7 +41,7 @@ class DelegateSudokuTable(QStyledItemDelegate):
         if (index.row() + 1) % 3 == 0 and (index.row() + 1) != 9:
             painter.drawLine(option.rect.bottomLeft(), option.rect.bottomRight())
 
-    def createEditor(self, parent, option: QStyleOptionViewItem, index: QModelIndex) -> None:
+    def createEditor(self, parent, option: QStyleOptionViewItem, index: QModelIndex) -> QLineEdit:
         editor = QLineEdit(parent)
         editor.setAlignment(Qt.AlignCenter)
         if self.button_pen.isChecked():
@@ -77,6 +55,7 @@ class DelegateSudokuTable(QStyledItemDelegate):
 
     def onTextChanged(self, text: str) -> None:
         if self.recursion_error:
+            self.textChanged.emit()
             return
         editor = self.sender()
         if editor:
@@ -102,7 +81,7 @@ class DelegateSudokuTable(QStyledItemDelegate):
         editor.setText(text)
         self.previous_text = text
 
-class MenuPlay(QWidget):
+class PlayGUI(QWidget):
     font: QFont = None
     colors: dict = darkColors
     theme: ThemeID = ThemeID.dark
@@ -110,12 +89,12 @@ class MenuPlay(QWidget):
     grid_solved: list[list[int]] = None
     errors: int = 0
 
-    def __init__(self) -> None:
+    def __init__(self, difficulty: DifficultyID) -> None:
         super().__init__()
         self.font = QFont("Arial", 12)
-        self.initUI()
+        self.initGUI(difficulty)
 
-    def initUI(self) -> None:
+    def initGUI(self, difficulty) -> None:
         layout_errors = self.initErrors()
 
         self.button_theme = SlicingButton("", 200, 30, self.colors["item-foreground"], self.colors["item-background"], self)
@@ -126,20 +105,22 @@ class MenuPlay(QWidget):
         layout_top.addStretch()
 
         layout_tools = self.initTools()
-        self.initSudokuTable()
+        self.delegate = DelegateSudokuTable(self.button_pen, self.colors)
+        self.delegate.textChanged.connect(self.onItemChanged)
+        self.initSudokuTable(difficulty)
         layout_numbers = self.initNumbers()
 
-        layout_play = QVBoxLayout()
-        layout_play.addLayout(layout_errors)
-        layout_play.setAlignment(layout_errors, Qt.AlignHCenter)
-        layout_play.addLayout(layout_top)
-        layout_play.addWidget(self.table_sudoku)
-        layout_play.setAlignment(self.table_sudoku, Qt.AlignHCenter)
-        layout_play.addLayout(layout_tools)
-        layout_play.setAlignment(layout_tools, Qt.AlignHCenter)
-        layout_play.addLayout(layout_numbers)
-        layout_play.setAlignment(layout_numbers, Qt.AlignHCenter)
-        self.setLayout(layout_play)
+        self.layout_play = QVBoxLayout()
+        self.layout_play.addLayout(layout_errors)
+        self.layout_play.setAlignment(layout_errors, Qt.AlignHCenter)
+        self.layout_play.addLayout(layout_top)
+        self.layout_play.addWidget(self.table_sudoku)
+        self.layout_play.setAlignment(self.table_sudoku, Qt.AlignHCenter)
+        self.layout_play.addLayout(layout_tools)
+        self.layout_play.setAlignment(layout_tools, Qt.AlignHCenter)
+        self.layout_play.addLayout(layout_numbers)
+        self.layout_play.setAlignment(layout_numbers, Qt.AlignHCenter)
+        self.setLayout(self.layout_play)
 
     def initErrors(self) -> QHBoxLayout:
         layout_errors = QHBoxLayout()
@@ -183,19 +164,20 @@ class MenuPlay(QWidget):
         layout_tools.addWidget(self.button_hint)
         return layout_tools
 
-    def initSudokuTable(self) -> None:
+    def initSudokuTable(self, difficulty) -> None:
         self.table_sudoku = QTableWidget(9, 9)
         self.table_sudoku.setFixedSize(900, 600)
         self.table_sudoku.setFont(self.font)
-        self.table_sudoku.setItemDelegate(DelegateSudokuTable(self.button_pen, self.colors))
+        self.table_sudoku.setItemDelegate(self.delegate)
         self.table_sudoku.horizontalHeader().setVisible(False)
         self.table_sudoku.verticalHeader().setVisible(False)
         self.table_sudoku.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table_sudoku.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table_sudoku.setSelectionMode(QAbstractItemView.SingleSelection)
 
-        self.initGrid(DifficultyID.easy)
+        self.initGrid(difficulty)
         self.table_sudoku.itemClicked.connect(self.onItemClicked)
+        self.table_sudoku.itemChanged.connect(self.onItemChanged)
 
     def initGrid(self, difficulty) -> None:
         self.grid, self.grid_solved = create_grid(difficulty)
@@ -230,14 +212,36 @@ class MenuPlay(QWidget):
 
     def onItemClicked(self) -> None:
         for item in self.table_sudoku.selectedItems():
+            if len(item.text()) != 0:
+                return
             if self.button_pen.isChecked():
                 item.setForeground(self.colors["item-comment"])
             else:
                 item.setForeground(self.colors["item-foreground"])
 
+    def onItemChanged(self) -> None:
+        self.table_sudoku.model().blockSignals(True)
+        try:
+            for item in self.table_sudoku.selectedItems():
+                if item.foreground() != self.colors["item-comment"]:
+                    try:
+                        self.grid[item.row()][item.column()] = int(item.text())
+                    except:
+                        return
+                    if self.grid_solved[item.row()][item.column()] == self.grid[item.row()][item.column()]:
+                        item.setForeground(self.colors["item-made"])
+                        item.setFlags(Qt.ItemIsEnabled)
+                        self.removeAnnotations(item)
+                    else:
+                        item.setForeground(self.colors["item-false"])
+                        self.manageErrors()
+        finally:
+            self.table_sudoku.model().blockSignals(False)
+
     def buttonThemeAnimationFinished(self) -> None:
         app = QApplication.instance()
 
+        self.table_sudoku.model().blockSignals(True)
         if self.button_theme.slider_pos > 0:
             app.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.LightPalette))
             logger.info("Light")
@@ -252,9 +256,10 @@ class MenuPlay(QWidget):
             self.colors = darkColors
             self.updateTheme()
             self.theme = ThemeID.dark
+        self.table_sudoku.model().blockSignals(False)
 
     def updateTheme(self) -> None:
-        self.table_sudoku.setItemDelegate(DelegateSudokuTable(self.button_pen, self.colors))
+        self.table_sudoku.setItemDelegate(self.delegate)
         for i in range(9):
             for j in range(9):
                 item = self.table_sudoku.item(i, j)
@@ -266,8 +271,10 @@ class MenuPlay(QWidget):
         self.table_sudoku.setStyleSheet("border: none;")
 
     def buttonEraseClicked(self) -> None:
+        self.table_sudoku.model().blockSignals(True)
         for item in self.table_sudoku.selectedItems():
             item.setText("")
+        self.table_sudoku.model().blockSignals(False)
 
     def buttonPenClicked(self) -> None:
         for item in self.table_sudoku.selectedItems():
@@ -278,7 +285,7 @@ class MenuPlay(QWidget):
         else:
             logger.debug("Toggling the writing mode.")
             self.button_pen.setToolTip("Click to enable comment.")
-        self.table_sudoku.setItemDelegate(DelegateSudokuTable(self.button_pen, self.colors))
+        self.table_sudoku.setItemDelegate(self.delegate)
 
     def buttonHintClicked(self) -> None:
         state: QTableWidget = None
@@ -296,20 +303,29 @@ class MenuPlay(QWidget):
                     item.setText("".join(sorted(item.text() + button.text())))
             else:
                 item.setText(button.text())
-                self.grid[item.row()][item.column()] = int(item.text())
-                self.number_is_good()
 
-    def number_is_good(self) -> None:
-        for item in self.table_sudoku.selectedItems():
-            if not self.button_pen.isChecked():
-                if self.grid_solved[item.row()][item.column()] == self.grid[item.row()][item.column()]:
-                    item.setForeground(self.colors["item-made"])
-                    item.setFlags(Qt.ItemIsEnabled)
-                else:
-                    item.setForeground(self.colors["item-false"])
-                    if self.errors == 3:
-                        sys.exit()
-                    self.label_errors[self.errors].setFixedSize(50, 50)
-                    self.label_errors[self.errors].setAlignment(Qt.AlignCenter)
-                    self.label_errors[self.errors].setPixmap(QPixmap(getAbsolutePath("assets", "broken_heart.png")).scaled(32, 32))
-                    self.errors += 1
+    def manageErrors(self) -> None:
+        if self.errors == 3:
+            sys.exit()
+        self.label_errors[self.errors].setFixedSize(50, 50)
+        self.label_errors[self.errors].setAlignment(Qt.AlignCenter)
+        self.label_errors[self.errors].setPixmap(QPixmap(getAbsolutePath("assets", "broken_heart.png")).scaled(32, 32))
+        self.errors += 1
+
+    def removeAnnotations(self, item: QTableWidget):
+        for i in range(9):
+            item_row = self.table_sudoku.item(item.row(), i)
+            item_col = self.table_sudoku.item(i, item.column())
+            if item_row.foreground().color() == self.colors["item-comment"]:
+                if item.text() in item_row.text():
+                    item_row.setText(getCleanedString(item_row.text() + item.text()))
+            if item_col.foreground().color() == self.colors["item-comment"]:
+                if item.text() in item_col.text():
+                    item_col.setText(getCleanedString(item_col.text() + item.text()))
+            """
+            for i in range(item.row(), item.row() + 3):
+            for j in range(item.col(), item.col() + 3):
+                item_box = self.table_sudoku.item(i, j)
+                if item.text() in item_box.text():
+                    item_box.setText(getCleanedString(item_box.text() + item.text()))
+            """

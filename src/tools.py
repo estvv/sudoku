@@ -94,3 +94,32 @@ def create_grid(difficulty: DifficultyID) -> tuple[list[list[int | None]], list[
     """
     grid = Sudoku(3, seed=randint(0, sys.maxsize)).difficulty(difficulty.value)
     return grid.board, grid.solve().board
+
+def getBlurEffect(blurRadius: float) -> QGraphicsBlurEffect:
+    blur_effect = QGraphicsBlurEffect()
+    blur_effect.setBlurRadius(blurRadius)
+    return blur_effect
+
+darkColors: dict[str, QColor] = {
+    "item-foreground": QColor("white"),
+    "item-background": QColor("black"),
+    "item-background_selected": QColor(30, 30, 30),
+    "item-premade": QColor(65,105,225),
+    "item-made": QColor("yellow"),
+    "item-false": QColor("red"),
+    "item-comment": QColor(128, 128, 128),
+    "item-big_border": QColor(220, 220, 220),
+    "item-little_border": QColor(55, 65, 79)
+}
+
+whiteColors: dict[str, QColor] = {
+    "item-foreground": QColor("black"),
+    "item-background": QColor("white"),
+    "item-background_selected": QColor(240, 240, 240),
+    "item-premade": QColor(65, 105, 225),
+    "item-made": QColor("yellow"),
+    "item-false": QColor("red"),
+    "item-comment": QColor(128, 128, 128),
+    "item-big_border": QColor(150, 150, 150),
+    "item-little_border": QColor(192, 196, 200)
+}

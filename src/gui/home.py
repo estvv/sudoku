@@ -4,17 +4,15 @@ from PyQt5.QtCore import *
 from src.tools import *
 from src.enums.enums import *
 
-class MenuHome(QWidget):
+class HomeGUI(QWidget):
     difficulty: DifficultyID = DifficultyID.easy
 
     def __init__(self, updateMenu, updateDifficulty) -> None:
         super().__init__()
-        self.initUI(updateMenu, updateDifficulty)
+        self.initGUI(updateMenu, updateDifficulty)
 
-    def initUI(self, updateMenu, updateDifficulty):
-
+    def initGUI(self, updateMenu, updateDifficulty):
         layout_difficulty = self.initDifficulty(updateDifficulty)
-
         layout_menu = self.initBasics(updateMenu)
 
         layout = QVBoxLayout()
@@ -60,17 +58,17 @@ class MenuHome(QWidget):
     def initBasics(self, updateMenu) -> QVBoxLayout:
         layout_menu = QVBoxLayout()
 
-        button_play = getButton(lambda: updateMenu(MenuID.play), "Play", 150, 40)
+        button_play = getButton(lambda: updateMenu(MenuID.play), " Play", 150, 40)
         button_play.setIcon(QIcon(getAbsolutePath("assets", "valid.png")))
         button_play.setIconSize(QSize(32, 32))
         button_play.setToolTip("Play.")
 
-        button_settings = getButton(lambda: updateMenu(MenuID.settings), "Settings", 150, 40)
+        button_settings = getButton(lambda: updateMenu(MenuID.settings), " Settings", 150, 40)
         button_settings.setIcon(QIcon(getAbsolutePath("assets", "settings.png")))
         button_settings.setIconSize(QSize(32, 32))
         button_settings.setToolTip("Settings.")
 
-        button_exit = getButton(lambda: updateMenu(MenuID.close), "Exit", 150, 40)
+        button_exit = getButton(lambda: updateMenu(MenuID.close), " Exit", 150, 40)
         button_exit.setIcon(QIcon(getAbsolutePath("assets", "not_valid.png")))
         button_exit.setIconSize(QSize(32, 32))
         button_exit.setToolTip("Exit.")

@@ -76,7 +76,7 @@ cd release/windows
 ## 💻 Features
 
 - Play sudoku
-- Choose the difficulty of the grid (🟢 Easy / 🟡 Medium / 🔴 Hard / ⚫ Impossible)
+- Choose the difficulty of the grid (🟢 Easy / 🟡 Medium / 🟠 Hard / 🔴 Impossible)
 - Have a 💡 hint on a box if the player is stuck
 - Choose your theme (🌑 Dark, 🌕 Light)
 

@@ -5,6 +5,7 @@ class MenuID(Enum):
     home     = 1
     settings = 2
     play     = 3
+    pause    = 4
 
 class ThemeID(Enum):
     dark  = 0
