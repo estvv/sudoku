@@ -1,8 +1,7 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-from src.tools import *
-from src.enums.enums import *
+from src import *
 
 class HomeGUI(QWidget):
     difficulty: DifficultyID = DifficultyID.easy
@@ -78,4 +77,16 @@ class HomeGUI(QWidget):
         layout_menu.addWidget(button_settings, alignment=Qt.AlignCenter)
         layout_menu.addWidget(button_exit, alignment=Qt.AlignCenter)
         layout_menu.addStretch()
-        return layout_menu
+
+        frame = QFrame()
+        frame.setFrameShape(QFrame.Box)
+        frame.setLineWidth(2)
+        frame.setFixedSize(300, 300)
+        frame.setLayout(layout_menu)
+
+        main_layout = QVBoxLayout()
+        main_layout.addStretch()
+        main_layout.addWidget(frame)
+        main_layout.setAlignment(frame, Qt.AlignCenter)
+        main_layout.addStretch()
+        return main_layout

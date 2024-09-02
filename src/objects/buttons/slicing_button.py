@@ -45,14 +45,14 @@ class SlicingButton(QPushButton):
 
         if self.slider_pos > 0:
             painter.setBrush(QBrush(self.color_on))
-            painter.drawRect(QRect(rect.left(), rect.top(), self.slider_pos, rect.height()).adjusted(0, 0, -1, -1))
+            painter.drawRect(QRectF(rect.left(), rect.top(), self.slider_pos, rect.height()).adjusted(0, 0, -1, -1))
 
             painter.setBrush(QBrush(self.color_off))
-            painter.drawRect(QRect(self.slider_pos, rect.top(), rect.width() - self.slider_pos, rect.height()).adjusted(0, 0, -1, -1))
+            painter.drawRect(QRectF(self.slider_pos, rect.top(), rect.width() - self.slider_pos, rect.height()).adjusted(0, 0, -1, -1))
             painter.setPen(self.color_off)
             painter.drawText(rect, Qt.AlignCenter, self.text())
         else:
             painter.setBrush(QBrush(self.color_off))
-            painter.drawRect(rect.adjusted(0, 0, -1, -1))
+            painter.drawRect(QRectF(rect.left(), rect.top(), rect.width(), rect.height()).adjusted(0, 0, -1, -1))
             painter.setPen(self.color_on)
             painter.drawText(rect, Qt.AlignCenter, self.text())

@@ -6,7 +6,7 @@ from typing import Callable
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-from src.enums.enums import *
+from src.enums import *
 
 def getAbsolutePath(folder: str, filename: str) -> None:
     """

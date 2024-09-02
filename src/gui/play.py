@@ -2,10 +2,7 @@ import qdarkstyle
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-from src.logger import *
-from src.tools import *
-from src.enums.enums import *
-from src.objects.buttons.slicing_button import *
+from src import *
 
 class DelegateSudokuTable(QStyledItemDelegate):
     textChanged = pyqtSignal()
@@ -89,16 +86,26 @@ class PlayGUI(QWidget):
     grid_solved: list[list[int]] = None
     errors: int = 0
 
-    def __init__(self, difficulty: DifficultyID) -> None:
+    def __init__(self, updateWindow, difficulty: DifficultyID, theme: ThemeID = ThemeID.dark) -> None:
         super().__init__()
         self.font = QFont("Arial", 12)
+        self.theme = theme
+        if theme != ThemeID.dark:
+            self.colors = whiteColors
+        self.updateWindow = updateWindow
         self.initGUI(difficulty)
 
     def initGUI(self, difficulty) -> None:
         layout_errors = self.initErrors()
 
-        self.button_theme = SlicingButton("", 200, 30, self.colors["item-foreground"], self.colors["item-background"], self)
-        self.button_theme.animation.finished.connect(self.buttonThemeAnimationFinished)
+        if self.theme != ThemeID.dark:
+            self.button_theme = SlicingButton("", 200, 30, self.colors["item-background"], self.colors["item-foreground"], self)
+            self.button_theme.animation.finished.connect(self.buttonThemeAnimationFinished)
+            self.button_theme.slider_pos = self.button_theme.rect().width()
+        else:
+            self.button_theme = SlicingButton("", 200, 30, self.colors["item-foreground"], self.colors["item-background"], self)
+            self.button_theme.animation.finished.connect(self.buttonThemeAnimationFinished)
+
         layout_top = QHBoxLayout()
         layout_top.addStretch()
         layout_top.addWidget(self.button_theme)
@@ -306,7 +313,8 @@ class PlayGUI(QWidget):
 
     def manageErrors(self) -> None:
         if self.errors == 3:
-            sys.exit()
+            self.updateWindow(MenuID.loose)
+            return
         self.label_errors[self.errors].setFixedSize(50, 50)
         self.label_errors[self.errors].setAlignment(Qt.AlignCenter)
         self.label_errors[self.errors].setPixmap(QPixmap(getAbsolutePath("assets", "broken_heart.png")).scaled(32, 32))

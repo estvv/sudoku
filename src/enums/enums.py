@@ -6,6 +6,8 @@ class MenuID(Enum):
     settings = 2
     play     = 3
     pause    = 4
+    loose    = 5
+    win      = 6
 
 class ThemeID(Enum):
     dark  = 0
