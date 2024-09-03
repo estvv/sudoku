@@ -85,6 +85,7 @@ class PlayGUI(QWidget):
     grid: list[list[int]] = None
     grid_solved: list[list[int]] = None
     errors: int = 0
+    hint: int = 3
 
     def __init__(self, updateWindow, difficulty: DifficultyID, theme: ThemeID = ThemeID.dark) -> None:
         super().__init__()
@@ -160,8 +161,8 @@ class PlayGUI(QWidget):
         self.button_pen.setCheckable(True)
         self.button_pen.setToolTip("Click to enable comment.")
 
-        self.button_hint = getButton(lambda: None, "  0 / 3", 100, 50)
-        self.button_hint.setIcon(QIcon(getAbsolutePath("assets", "hint.png")))
+        self.button_hint = getButton(self.buttonHintClicked, "", 100, 50)
+        self.button_hint.setIcon(QIcon(getAbsolutePath("assets", "hint_3.png")))
         self.button_hint.setIconSize(QSize(32, 32))
 
         layout_tools.addWidget(self.button_erase)
@@ -295,11 +296,16 @@ class PlayGUI(QWidget):
         self.table_sudoku.setItemDelegate(self.delegate)
 
     def buttonHintClicked(self) -> None:
-        state: QTableWidget = None
-        for item in self.table_sudoku.selectedItems():
-            state = item
-        if not state:
+        if self.hint == 0:
             return
+        for i in range(self.table_sudoku.rowCount()):
+            for j in range(self.table_sudoku.columnCount()):
+                if self.table_sudoku.item(i, j).isSelected():
+                    self.hint -= 1
+                    filename = "hint_" + str(self.hint) + ".png"
+                    self.table_sudoku.item(i, j).setText(str(self.grid_solved[i][j]))
+                    self.button_hint.setIcon(QIcon(getAbsolutePath("assets", filename)))
+                    self.button_hint.setIconSize(QSize(32, 32))
 
     def buttonNumberClicked(self, button: QPushButton) -> None:
         for item in self.table_sudoku.selectedItems():
